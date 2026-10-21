@@ -1,0 +1,11 @@
+{
+  "name": "Pacific Coast Auto - Book Appointment",
+  "nodes": [
+    { "parameters": { "httpMethod": "POST", "path": "pacific-coast-auto/book", "responseMode": "responseNode", "options": {} }, "id": "booking-webhook", "name": "Vapi Booking Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 0], "webhookId": "pacific-coast-auto-booking" },
+    { "parameters": { "method": "POST", "url": "={{$env.BOOKING_API_URL + '/api/book'}}", "sendHeaders": true, "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{'Bearer ' + $env.VAPI_WEBHOOK_TOKEN}}" }] }, "sendBody": true, "contentType": "raw", "rawContentType": "application/json", "body": "={{ JSON.stringify($json.body?.message?.toolCallList?.[0]?.function?.arguments ?? $json.body ?? {}) }}", "options": { "timeout": 25000 } }, "id": "call-api", "name": "Create Calendar Event", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [240, 0], "onError": "continueErrorOutput" },
+    { "parameters": { "respondWith": "json", "responseBody": "={{ { results: [{ toolCallId: $('Vapi Booking Webhook').item.json.body?.message?.toolCallList?.[0]?.id, result: JSON.stringify($json) }] } }}", "options": {} }, "id": "respond", "name": "Return Booking Result", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.4, "position": [500, 0] },
+    { "parameters": { "respondWith": "json", "responseBody": "={{ { results: [{ toolCallId: $('Vapi Booking Webhook').item.json.body?.message?.toolCallList?.[0]?.id, result: JSON.stringify({ confirmed: false, reason: 'calendar_create_failed', retryable: true }) }] } }}", "options": { "responseCode": 200 } }, "id": "respond-error", "name": "Never Confirm On Failure", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.4, "position": [500, 180] }
+  ],
+  "connections": { "Vapi Booking Webhook": { "main": [[{ "node": "Create Calendar Event", "type": "main", "index": 0 }]] }, "Create Calendar Event": { "main": [[{ "node": "Return Booking Result", "type": "main", "index": 0 }], [{ "node": "Never Confirm On Failure", "type": "main", "index": 0 }]] } },
+  "active": false, "settings": { "executionOrder": "v1" }, "versionId": "22222222-2222-4222-8222-222222222222", "meta": { "templateCredsSetupCompleted": false }, "tags": []
+}

@@ -1,0 +1,33 @@
+services:
+  booking-api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports: ["3000:3000"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  n8n:
+    image: n8nio/n8n:1.115.2
+    restart: unless-stopped
+    ports: ["5678:5678"]
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
+      BOOKING_API_URL: http://booking-api:3000
+      VAPI_WEBHOOK_TOKEN: ${VAPI_WEBHOOK_TOKEN}
+      GENERIC_TIMEZONE: America/Los_Angeles
+      TZ: America/Los_Angeles
+    volumes: ["n8n_data:/home/node/.n8n"]
+    depends_on:
+      booking-api:
+        condition: service_healthy
+volumes:
+  n8n_data:

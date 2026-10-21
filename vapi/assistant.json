@@ -1,0 +1,15 @@
+{
+  "name": "Pacific Coast Auto Receptionist",
+  "firstMessage": "Thanks for calling Pacific Coast Auto Service. How can I help with your vehicle today?",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "temperature": 0.2,
+    "messages": [{ "role": "system", "content": "You are the receptionist for Pacific Coast Auto Service in Orange County, California. Hours are Monday through Friday, 8 AM to 6 PM Pacific. Services are oil changes, brakes, diagnostics, tire services, and general maintenance. Be concise, friendly, and safety-conscious. Before booking, collect customer name, callback number, vehicle year/make/model, service or concern, requested time, and email if available. Always call check_availability before book_appointment. Restate the exact date, time, service, and vehicle and obtain explicit caller approval before booking. Never say an appointment is confirmed unless book_appointment returns confirmed=true and an eventId. If a tool fails, say the appointment is not confirmed and offer a callback. Interpret relative dates in America/Los_Angeles and clarify ambiguous dates. Do not invent prices, repair diagnoses, availability, or policies." }],
+    "tools": [
+      { "type": "function", "async": false, "function": { "name": "check_availability", "description": "Check actual appointment availability before offering a time.", "parameters": { "type": "object", "properties": { "date": { "type": "string", "description": "YYYY-MM-DD" }, "service": { "type": "string", "enum": ["oil_change", "brakes", "diagnostics", "tire_service", "general_maintenance"] }, "timezone": { "type": "string", "default": "America/Los_Angeles" } }, "required": ["date", "service"] } }, "server": { "url": "https://YOUR_N8N_HOST/webhook/pacific-coast-auto/availability", "timeoutSeconds": 20 } },
+      { "type": "function", "async": false, "function": { "name": "book_appointment", "description": "Create an appointment only after availability and caller confirmation. Confirm only when confirmed=true and eventId exists.", "parameters": { "type": "object", "properties": { "start": { "type": "string", "description": "ISO 8601 date-time with offset" }, "service": { "type": "string", "enum": ["oil_change", "brakes", "diagnostics", "tire_service", "general_maintenance"] }, "customerName": { "type": "string" }, "phone": { "type": "string" }, "email": { "type": "string" }, "vehicle": { "type": "string" }, "concern": { "type": "string" }, "timezone": { "type": "string", "default": "America/Los_Angeles" }, "idempotencyKey": { "type": "string", "description": "Stable key from call ID and selected time" } }, "required": ["start", "service", "customerName", "phone", "vehicle", "concern", "idempotencyKey"] } }, "server": { "url": "https://YOUR_N8N_HOST/webhook/pacific-coast-auto/book", "timeoutSeconds": 25 } }
+    ]
+  },
+  "endCallMessage": "Thanks for calling Pacific Coast Auto Service. Drive safely!"
+}
